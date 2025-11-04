@@ -45,18 +45,18 @@ def generate_launch_description():
                 "use_sim_time": use_sim_time,
                 # Patchwork++ configuration
                 "sensor_height": 1.88,
-                "num_iter": 3,  # Number of iterations for ground plane estimation using PCA.
+                "num_iter": 5,  # Number of iterations for ground plane estimation using PCA.
                 "num_lpr": 20,  # Maximum number of points to be selected as lowest points representative.
-                "num_min_pts": 0,  # Minimum number of points to be estimated as ground plane in each patch.
-                "th_seeds": 0.3,
+                "num_min_pts": 10,  # Minimum number of points to be estimated as ground plane in each patch.
+                "th_seeds": 0.5,
                 # threshold for lowest point representatives using in initial seeds selection of ground points.
-                "th_dist": 0.125,  # threshold for thickness of ground.
-                "th_seeds_v": 0.25,
+                "th_dist": 0.25,  # threshold for thickness of ground.
+                "th_seeds_v": 0.35,
                 # threshold for lowest point representatives using in initial seeds selection of vertical structural points.
-                "th_dist_v": 0.9,  # threshold for thickness of vertical structure.
-                "max_range": 80.0,  # max_range of ground estimation area
-                "min_range": 1.0,  # min_range of ground estimation area
-                "uprightness_thr": 0.101,
+                "th_dist_v": 1.2,  # threshold for thickness of vertical structure.
+                # "max_range": 500.0,  # max_range of ground estimation area
+                "min_range": 0.001,  # min_range of ground estimation area
+                "uprightness_thr": 0.05,
                 # threshold of uprightness using in Ground Likelihood Estimation(GLE). Please refer paper for more information about GLE.
                 "verbose": True,  # display verbose info
             }

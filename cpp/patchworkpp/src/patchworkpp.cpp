@@ -579,50 +579,97 @@ double PatchWorkpp::xy2radius(const double &x, const double &y) {
   return sqrt(x * x + y * y);
 }
 
+// void PatchWorkpp::pc2czm(const Eigen::MatrixXf &src, std::vector<Zone> &czm) {
+//   double max_range = params_.max_range, min_range = params_.min_range;
+//   double min_range_0 = min_ranges_[0], min_range_1 = min_ranges_[1], min_range_2 = min_ranges_[2],
+//          min_range_3 = min_ranges_[3];
+//   int num_ring_0 = params_.num_rings_each_zone[0], num_sector_0 = params_.num_sectors_each_zone[0];
+//   int num_ring_1 = params_.num_rings_each_zone[1], num_sector_1 = params_.num_sectors_each_zone[1];
+//   int num_ring_2 = params_.num_rings_each_zone[2], num_sector_2 = params_.num_sectors_each_zone[2];
+//   int num_ring_3 = params_.num_rings_each_zone[3], num_sector_3 = params_.num_sectors_each_zone[3];
+
+//   for (int i = 0; i < src.rows(); i++) {
+//     float x = src.row(i)(0), y = src.row(i)(1), z = src.row(i)(2);
+
+//     if (z == std::numeric_limits<float>::min()) continue;
+
+//     double r = xy2radius(x, y);
+//     int ring_idx, sector_idx;
+//     if ((r <= max_range) && (r > min_range)) {
+//       // double theta = xy2theta(pt.x, pt.y);
+//       double theta = xy2theta(x, y);
+
+//       if (r < min_range_1) {  // In First rings
+//         ring_idx   = min(static_cast<int>(((r - min_range_0) / ring_sizes_[0])), num_ring_0 - 1);
+//         sector_idx = min(static_cast<int>((theta / sector_sizes_[0])), num_sector_0 - 1);
+//         czm[0][ring_idx][sector_idx].emplace_back(PointXYZ(x, y, z, i));
+//       } else if (r < min_range_2) {
+//         ring_idx   = min(static_cast<int>(((r - min_range_1) / ring_sizes_[1])), num_ring_1 - 1);
+//         sector_idx = min(static_cast<int>((theta / sector_sizes_[1])), num_sector_1 - 1);
+//         czm[1][ring_idx][sector_idx].emplace_back(PointXYZ(x, y, z, i));
+//       } else if (r < min_range_3) {
+//         ring_idx   = min(static_cast<int>(((r - min_range_2) / ring_sizes_[2])), num_ring_2 - 1);
+//         sector_idx = min(static_cast<int>((theta / sector_sizes_[2])), num_sector_2 - 1);
+//         czm[2][ring_idx][sector_idx].emplace_back(PointXYZ(x, y, z, i));
+//       } else {  // Far!
+//         ring_idx   = min(static_cast<int>(((r - min_range_3) / ring_sizes_[3])), num_ring_3 - 1);
+//         sector_idx = min(static_cast<int>((theta / sector_sizes_[3])), num_sector_3 - 1);
+//         czm[3][ring_idx][sector_idx].emplace_back(PointXYZ(x, y, z, i));
+//       }
+
+//     } else {
+//       cloud_nonground_.push_back(PointXYZ(x, y, z, i));
+//     }
+//   }
+//   if (params_.verbose)
+//     cout << "\033[1;33m"
+//          << "PatchWorkpp::pc2czm() - Divides pointcloud into the concentric zone model successfully"
+//          << "\033[0m" << endl;
+// }
+
 void PatchWorkpp::pc2czm(const Eigen::MatrixXf &src, std::vector<Zone> &czm) {
-  double max_range = params_.max_range, min_range = params_.min_range;
-  double min_range_0 = min_ranges_[0], min_range_1 = min_ranges_[1], min_range_2 = min_ranges_[2],
-         min_range_3 = min_ranges_[3];
+  double min_range_0 = min_ranges_[0], min_range_1 = min_ranges_[1];
+  double min_range_2 = min_ranges_[2], min_range_3 = min_ranges_[3];
   int num_ring_0 = params_.num_rings_each_zone[0], num_sector_0 = params_.num_sectors_each_zone[0];
   int num_ring_1 = params_.num_rings_each_zone[1], num_sector_1 = params_.num_sectors_each_zone[1];
   int num_ring_2 = params_.num_rings_each_zone[2], num_sector_2 = params_.num_sectors_each_zone[2];
   int num_ring_3 = params_.num_rings_each_zone[3], num_sector_3 = params_.num_sectors_each_zone[3];
 
+  bool global_map_mode = true;  // <--- fuerza modo mapa global (sin límites de rango)
+
   for (int i = 0; i < src.rows(); i++) {
     float x = src.row(i)(0), y = src.row(i)(1), z = src.row(i)(2);
-
     if (z == std::numeric_limits<float>::min()) continue;
 
     double r = xy2radius(x, y);
-    int ring_idx, sector_idx;
-    if ((r <= max_range) && (r > min_range)) {
-      // double theta = xy2theta(pt.x, pt.y);
-      double theta = xy2theta(x, y);
+    double theta = xy2theta(x, y);
 
-      if (r < min_range_1) {  // In First rings
-        ring_idx   = min(static_cast<int>(((r - min_range_0) / ring_sizes_[0])), num_ring_0 - 1);
-        sector_idx = min(static_cast<int>((theta / sector_sizes_[0])), num_sector_0 - 1);
+    if (global_map_mode || ((r <= params_.max_range) && (r > params_.min_range))) {
+      if (r < min_range_1) {
+        int ring_idx   = std::min(static_cast<int>(((r - min_range_0) / ring_sizes_[0])), num_ring_0 - 1);
+        int sector_idx = std::min(static_cast<int>((theta / sector_sizes_[0])), num_sector_0 - 1);
         czm[0][ring_idx][sector_idx].emplace_back(PointXYZ(x, y, z, i));
       } else if (r < min_range_2) {
-        ring_idx   = min(static_cast<int>(((r - min_range_1) / ring_sizes_[1])), num_ring_1 - 1);
-        sector_idx = min(static_cast<int>((theta / sector_sizes_[1])), num_sector_1 - 1);
+        int ring_idx   = std::min(static_cast<int>(((r - min_range_1) / ring_sizes_[1])), num_ring_1 - 1);
+        int sector_idx = std::min(static_cast<int>((theta / sector_sizes_[1])), num_sector_1 - 1);
         czm[1][ring_idx][sector_idx].emplace_back(PointXYZ(x, y, z, i));
       } else if (r < min_range_3) {
-        ring_idx   = min(static_cast<int>(((r - min_range_2) / ring_sizes_[2])), num_ring_2 - 1);
-        sector_idx = min(static_cast<int>((theta / sector_sizes_[2])), num_sector_2 - 1);
+        int ring_idx   = std::min(static_cast<int>(((r - min_range_2) / ring_sizes_[2])), num_ring_2 - 1);
+        int sector_idx = std::min(static_cast<int>((theta / sector_sizes_[2])), num_sector_2 - 1);
         czm[2][ring_idx][sector_idx].emplace_back(PointXYZ(x, y, z, i));
-      } else {  // Far!
-        ring_idx   = min(static_cast<int>(((r - min_range_3) / ring_sizes_[3])), num_ring_3 - 1);
-        sector_idx = min(static_cast<int>((theta / sector_sizes_[3])), num_sector_3 - 1);
+      } else {
+        int ring_idx   = std::min(static_cast<int>(((r - min_range_3) / ring_sizes_[3])), num_ring_3 - 1);
+        int sector_idx = std::min(static_cast<int>((theta / sector_sizes_[3])), num_sector_3 - 1);
         czm[3][ring_idx][sector_idx].emplace_back(PointXYZ(x, y, z, i));
       }
-
     } else {
+      // En modo mapa global esto nunca se ejecutará
       cloud_nonground_.push_back(PointXYZ(x, y, z, i));
     }
   }
+
   if (params_.verbose)
-    cout << "\033[1;33m"
-         << "PatchWorkpp::pc2czm() - Divides pointcloud into the concentric zone model successfully"
-         << "\033[0m" << endl;
+    std::cout << "\033[1;33m"
+              << "PatchWorkpp::pc2czm() - Global map mode: all points included."
+              << "\033[0m" << std::endl;
 }

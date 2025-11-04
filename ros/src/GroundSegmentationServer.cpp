@@ -50,10 +50,19 @@ GroundSegmentationServer::GroundSegmentationServer(const rclcpp::NodeOptions &op
   Patchworkpp_ = std::make_unique<patchwork::PatchWorkpp>(params);
 
   // Initialize subscribers
+//   pointcloud_sub_ = create_subscription<sensor_msgs::msg::PointCloud2>(
+//       "pointcloud_topic",
+//       rclcpp::SensorDataQoS(),
+//       std::bind(&GroundSegmentationServer::EstimateGround, this, std::placeholders::_1));
+  rclcpp::QoS qos_input(1);
+  qos_input.reliability(RMW_QOS_POLICY_RELIABILITY_RELIABLE);
+  qos_input.durability(RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL);
+  
   pointcloud_sub_ = create_subscription<sensor_msgs::msg::PointCloud2>(
       "pointcloud_topic",
-      rclcpp::SensorDataQoS(),
+      qos_input,
       std::bind(&GroundSegmentationServer::EstimateGround, this, std::placeholders::_1));
+
 
   /*
    * We use the following QoS setting for reliable ground segmentation.
